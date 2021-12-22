@@ -1,47 +1,37 @@
+import com.ipiecoles.java.java350.exception.EmployeException;
+import com.ipiecoles.java.java350.model.Employe;
+import com.ipiecoles.java.java350.repository.EmployeRepository;
+import com.ipiecoles.java.java350.service.EmployeService;
 import com.thoughtworks.gauge.Step;
-import com.thoughtworks.gauge.Table;
-import com.thoughtworks.gauge.TableRow;
+import org.assertj.core.api.Assertions;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.HashSet;
+import java.time.LocalDate;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
+@RunWith(MockitoJUnitRunner.class)
 public class StepImplementation {
 
-    private HashSet<Character> vowels;
+    @InjectMocks
+    EmployeService employeService;
+    @Mock
+    EmployeRepository employeRepository;
 
-    @Step("Vowels in English language are <vowelString>.")
-    public void setLanguageVowels(String vowelString) {
-        vowels = new HashSet<>();
-        for (char ch : vowelString.toCharArray()) {
-            vowels.add(ch);
-        }
-    }
+    @Step("Un commercial a une performance de <perfActuelle>. Il a realise un CA de <caTraite> euros. Il devait realiser un CA de <objectifCa> euros. Sa performance passe a <nouvellePerf>")
+    public void checkPerformance(Integer perfActuelle, Long caTraite, Long objectifCa, Integer nouvellePerf) throws EmployeException {
+        String matricule = "C12345";
+        Mockito.when(employeRepository.findByMatricule(matricule)).thenReturn(new Employe(
+                "John", "Doe", matricule, LocalDate.now(), 2500.0, perfActuelle, 1.0
+        ));
+        Mockito.when(employeRepository.avgPerformanceWhereMatriculeStartsWith("C")).thenReturn(50.0);
 
-    @Step("The word <word> has <expectedCount> vowels.")
-    public void verifyVowelsCountInWord(String word, int expectedCount) {
-        int actualCount = countVowels(word);
-        assertThat(expectedCount).isEqualTo(actualCount);
-    }
+        employeService.calculPerformanceCommercial(matricule, caTraite, objectifCa);
 
-    @Step("Almost all words have vowels <wordsTable>")
-    public void verifyVowelsCountInMultipleWords(Table wordsTable) {
-        for (TableRow row : wordsTable.getTableRows()) {
-            String word = row.getCell("Word");
-            int expectedCount = Integer.parseInt(row.getCell("Vowel Count"));
-            int actualCount = countVowels(word);
+        ArgumentCaptor<Employe> employeArgumentCaptor = ArgumentCaptor.forClass(Employe.class);
+        Mockito.verify(employeRepository).save(employeArgumentCaptor.capture());
+        Employe commercial = employeArgumentCaptor.getValue();
 
-            assertThat(expectedCount).isEqualTo(actualCount);
-        }
-    }
-
-    private int countVowels(String word) {
-        int count = 0;
-        for (char ch : word.toCharArray()) {
-            if (vowels.contains(ch)) {
-                count++;
-            }
-        }
-        return count;
+        Assertions.assertThat(commercial.getPerformance()).isEqualTo(nouvellePerf);
     }
 }
