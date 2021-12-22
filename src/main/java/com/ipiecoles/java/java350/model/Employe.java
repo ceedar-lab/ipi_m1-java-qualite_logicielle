@@ -138,8 +138,19 @@ public class Employe {
         return prime * this.tempsPartiel;
     }
 
-    //Augmenter salaire
-    //public void augmenterSalaire(double pourcentage){}
+    /**
+     * Permet de calculer le nouveau salaire d'un employé en fonction de son augmentation.
+     *
+     * @throws IllegalArgumentException si augmentation null ou négative.
+     */
+    public void augmenterSalaire(Double pourcentage) {
+        if (pourcentage == null)
+            throw new IllegalArgumentException("Le pourcentage d'augmentation ne peut être null");
+        else if (pourcentage < 0)
+            throw new IllegalArgumentException("Le pourcentage d'augmentation ne peut être négatif");
+        else
+            this.salaire = Math.round(this.getSalaire() * (1 + pourcentage) * 100) / 100d;
+    }
 
     public Long getId() {
         return id;
